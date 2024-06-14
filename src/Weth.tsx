@@ -1,4 +1,4 @@
-import { zeroAddress } from "viem";
+import { formatUnits, zeroAddress } from "viem";
 import { useAccount, useChainId, useReadContract } from "wagmi";
 import { addresses } from "./constants";
 import { wethAbi } from "./generated";
@@ -12,6 +12,9 @@ export const Weth = () => {
     abi: wethAbi,
     functionName: "balanceOf",
     args: [account?.address ?? zeroAddress],
+    query: {
+      meta: { successMessage: "WETH balance fetched successfully!" },
+    },
   });
 
   if (isLoading) {
@@ -25,7 +28,7 @@ export const Weth = () => {
 
   return (
     <div>
-      <p>WETH Balance: {data?.toString()}</p>
+      <p>WETH Balance: {formatUnits(data ?? 0n, 18)}</p>
     </div>
   );
 };
