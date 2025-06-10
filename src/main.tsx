@@ -13,8 +13,20 @@ import { config } from "./wagmi.ts";
 
 import "./index.css";
 import toast, { Toaster } from "react-hot-toast";
+import { parseCustomError } from "./error-utils.ts";
+import { ContractFunctionRevertedError } from "viem";
 
 globalThis.Buffer = Buffer;
+
+// Type the `query.meta` and `mutation.meta` properties used in the QueryCache
+declare module "@tanstack/react-query" {
+  interface Register {
+    queryMeta: {
+      onError?: (error: Error) => void;
+      onSuccess?: (data: unknown) => void;
+    };
+  }
+}
 
 // Toast on success and error using "meta" property following TKDodo's (react-query maintainer) recommendations in the following blogs:
 // https://tkdodo.eu/blog/breaking-react-querys-api-on-purpose
@@ -22,17 +34,28 @@ globalThis.Buffer = Buffer;
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
-      if (query?.meta?.errorMessage) {
-        toast.error(`Something went wrong: ${query.meta.errorMessage}`);
+      // Parse and log wagmi errors using their ABI. If error is not from wagmi, original error will get logged.
+      console.error(error);
+      // const parsedError = parseCustomError(error);
+      // if (parsedError instanceof ContractFunctionRevertedError) {
+      //   console.error(
+      //     "Custom Error | Name: %s | Short message: %s",
+      //     parsedError?.data?.errorName,
+      //     parsedError?.shortMessage
+      //   );
+      // }
+
+      if (query?.meta?.onError) {
+        query?.meta?.onError(error);
       }
     },
     onSuccess: (data, query) => {
-      // Only show success toast on first success of each query
-      if (query.state.dataUpdateCount === 1 && query?.meta?.successMessage) {
-        toast.success(`${query?.meta?.successMessage}`);
+      if (query?.meta?.onSuccess) {
+        query?.meta?.onSuccess(data);
       }
     },
   }),
+
 });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

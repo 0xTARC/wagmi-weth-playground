@@ -1,6 +1,5 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { Weth } from "./Weth";
-import { WethDeposit } from "./WethDeposit";
 
 function App() {
   const account = useAccount();
@@ -43,16 +42,9 @@ function App() {
       </div>
 
       <br />
-      <h2>Weth</h2>
-      <div>
-        <h3>Weth Balance</h3>
-        <Weth />
-      </div>
+      <Weth />
 
-      <div>
-        <h3>Deposit Weth</h3>
-        <WethDeposit />
-      </div>
+      <br />
     </>
   );
 }

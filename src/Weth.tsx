@@ -1,34 +1,103 @@
 import { formatUnits, zeroAddress } from "viem";
-import { useAccount, useChainId, useReadContract } from "wagmi";
+import {
+  useAccount,
+  useChainId,
+  useReadContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { addresses } from "./constants";
-import { wethAbi } from "./generated";
+import {
+  useSimulateWethDeposit,
+  useWriteWeth,
+  useWriteWethDeposit,
+  wethAbi,
+} from "./generated";
+import { waitForTransactionReceipt } from "wagmi/actions";
+import { useConfig } from "wagmi";
+import toast from "react-hot-toast";
+import { useChains } from "wagmi";
+import { TransactionExplorerLink } from "./TransactionExplorerLink";
 
 export const Weth = () => {
+  const wagmiConfig = useConfig();
   const chainId = useChainId();
+  const chains = useChains();
   const account = useAccount();
 
-  const { data, isLoading, isError, error } = useReadContract({
+  const readBalanceOf = useReadContract({
     address: addresses?.[chainId]?.Weth ?? zeroAddress,
     abi: wethAbi,
     functionName: "balanceOf",
     args: [account?.address ?? zeroAddress],
     query: {
-      meta: { successMessage: "WETH balance fetched successfully!" },
+      meta: {
+        onSuccess: () => toast.success("WETH balance fetched successfully!"),
+      },
     },
   });
 
-  if (isLoading) {
-    return <p>Loading...</p>;
-  }
+  const simWethDeposit = useSimulateWethDeposit({
+    value: 1n,
+  });
+  const writeWethDeposit = useWriteWethDeposit({
+    mutation: {
+      onSuccess: () => alert("success"),
+    },
+  });
+  const waitWethDeposit = useWaitForTransactionReceipt({
+    hash: writeWethDeposit.data,
+    query: {
+      meta: {
+        onSuccess: (data) => {
+          // toast here
+        },
+      },
+    },
+  });
 
-  if (isError) {
-    console.error("Error: ", error);
-    return <p>{error.message}</p>;
-  }
+  // const handleWriteWethAsync = async () => {
+  //   if (sim?.data?.request == null) {
+  //     return null;
+  //   }
+  //   const writeResult = await writeWethDeposit.writeContractAsync(
+  //     sim.data.request
+  //   );
+  //   await waitForTransactionReceipt(wagmiConfig, { hash: writeResult });
+  // };
+
+  const handleWriteWethSync = () => {
+    if (simWethDeposit?.data?.request == null) {
+      return null;
+    }
+    writeWethDeposit.writeContract(simWethDeposit.data.request, {
+      onSuccess: (data) => {
+        toast(
+          <>
+            Success! <TransactionExplorerLink txnHash={data} />
+          </>
+        );
+      },
+    });
+  };
 
   return (
     <div>
-      <p>WETH Balance: {formatUnits(data ?? 0n, 18)}</p>
+      <h2>Weth</h2>
+      <h3>Weth Balance</h3>
+      {readBalanceOf.isLoading ? (
+        <p>Loading...</p>
+      ) : readBalanceOf.isError ? (
+        <p>{readBalanceOf.error.message}</p>
+      ) : (
+        <p>WETH Balance: {formatUnits(readBalanceOf.data ?? 0n, 18)}</p>
+      )}
+
+      {simWethDeposit.isLoading ||
+      writeWethDeposit.isPending ||
+      waitWethDeposit.isLoading ? (
+        <p>Loading...</p>
+      ) : null}
+      <button onClick={handleWriteWethSync}>Deposit 1 Weth</button>
     </div>
   );
 };

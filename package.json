@@ -11,13 +11,13 @@
     "wagmi:generate": "wagmi generate"
   },
   "dependencies": {
-    "@tanstack/react-query": "5.0.5",
+    "@tanstack/react-query": "5.80.6",
     "@wagmi/cli": "^2.1.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "viem": "latest",
-    "wagmi": "latest"
+    "viem": "^2.31.0",
+    "wagmi": "^2.15.6"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.1.2",
